@@ -7,7 +7,11 @@ export default function OnboardingHeader() {
       </div>
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400">
-          Let's Set Up Your AI Mentor
+          Let's Set Up Your
+          {" "}
+          <span className="underline decoration-purple-500/50 decoration-wavy">
+           AI  Mentor
+           </span>
         </h1>
         <p className="max-w-[900px] text-zinc-400 md:text-xl/relaxed">
           Answer a few questions to customize your learning experience
