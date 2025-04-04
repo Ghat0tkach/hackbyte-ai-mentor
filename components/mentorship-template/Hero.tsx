@@ -1,5 +1,6 @@
 import { ArrowRight, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export default function MentorShipHeroSection() {
   return (
@@ -22,12 +23,14 @@ export default function MentorShipHeroSection() {
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
+            <Link href="/mentorship/onboarding">
               <Button
                 size="lg"
                 className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white border-0 h-12 px-6 font-medium w-full sm:w-auto"
               >
                 Start Learning <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
+              </Link>
               <Button
                 size="lg"
                 variant="outline"

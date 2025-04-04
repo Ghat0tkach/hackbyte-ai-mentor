@@ -11,6 +11,7 @@ import LearningGoalsStep from "./steps/LearningGoalsStep";
 import AdditionalInfoStep from "./steps/AdditionalInfoStep";
 import OnboardingHeader from "./components/OnboardingHeader";
 import { useOnboardingStore } from "@/store/onboardingStore";
+import { useRouter } from "next/navigation";
 
 export default function OnboardingPage() {
   const { 
@@ -21,12 +22,21 @@ export default function OnboardingPage() {
     updateSelection, 
   } = useOnboardingStore();
   
+  const router = useRouter();
+  
   // Calculate total steps (always 5 steps now)
   const totalSteps = 5;
 
   const handleSubmit = () => {
     console.log("Form submitted:", selections);
-    // Handle form submission logic here
+    
+    // If custom mentor is selected, navigate to loading page first
+    if (selections.mentorType === "custom" && selections.customMentorCompany) {
+      router.push("/mentorship/session?loading=true");
+    } else {
+      // For non-custom mentors, just navigate to session page
+      router.push("/mentorship/session");
+    }
   };
 
   // Determine if the next button should be disabled

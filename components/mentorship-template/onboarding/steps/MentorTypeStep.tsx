@@ -19,15 +19,16 @@ export default function MentorTypeStep({
 }: MentorTypeStepProps) {
   const mentorTypes = [
     {
-      id: "microsoft",
-      name: "Microsoft Mentor",
-      description: "Learn Azure, .NET, and Microsoft best practices",
+      id: "facebook",
+      name: "Facebook Mentor",
+      description: "Learn React, GraphQL, and Facebook best practices",
+
       icon: <Code className="h-6 w-6 text-white" />,
     },
     {
-      id: "google",
-      name: "Google Mentor",
-      description: "Master web technologies and Google Cloud",
+      id: "twitter",
+      name: "Twitter Mentor",
+      description: "Learn React, GraphQL, and Twitter best practices",
       icon: <Cpu className="h-6 w-6 text-white" />,
     },
     {

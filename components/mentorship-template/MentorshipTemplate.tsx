@@ -1,6 +1,7 @@
 import { ArrowRight, Code, Database, FileText, MessageSquare, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link"
 
 export default function MentorshipTemplate() {
   return (
@@ -51,12 +52,14 @@ export default function MentorshipTemplate() {
                         <span className="text-sm text-zinc-400">{mentor.resources} resources</span>
                       </div>
                     </div>
+                    <Link href="/mentorship/onboarding">
                     <Button 
                       className="w-full bg-zinc-900 hover:bg-zinc-800 text-zinc-100 mt-4 h-10"
                       variant="ghost"
                     >
-                      Start Learning <ArrowRight className="h-4 w-4 ml-2" />
+                       Start Learning  <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>
