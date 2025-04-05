@@ -67,6 +67,7 @@ export interface Shape {
 export interface WhiteboardProps {
   width?: string | number
   height?: string | number
+  selectedQuestion?: SystemDesignQuestion
   onExport?: (exportFn: () => string) => void
   onImport?: (importFn: (data: string) => boolean) => void
   onStream?: (streamFn: (data: string, delayMs?: number) => boolean) => void

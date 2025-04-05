@@ -49,7 +49,7 @@ export function ChatBubble({
           
           <div className="flex-1 overflow-hidden">
             <Chat 
-              type={'system-design'}
+              type={type}
               containerClassName="h-full flex flex-col" 
               compact={true}
             />

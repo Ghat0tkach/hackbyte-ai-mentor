@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/database/mongodb';
-import { loadQuestions } from '../../utils/csv-loader';
+
 import path from 'path';
+import { loadQuestions } from '@/utils/csv-loader';
 
 export async function GET() {
   try {
