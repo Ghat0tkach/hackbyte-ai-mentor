@@ -7,12 +7,13 @@ export async function GET(
 ) {
   try {
     console.log('API: Fetching question...');
-    console.log('params: ',await params);
+    console.log('params:', params);
     const client = await clientPromise;
     const db = client.db('rag-knowledge-base');
     
     // Extract qid from URL
-    const qid = await params.qid;
+    const resolvedParams = await params;
+    const qid = resolvedParams.qid;
     const questionId = parseInt(qid);
 
     console.log(`API: Attempting to fetch question with ID ${questionId}`);
