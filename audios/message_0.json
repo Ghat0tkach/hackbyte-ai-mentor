@@ -1,0 +1,41 @@
+{
+  "metadata": {
+    "soundFile": "/Users/vikram/Desktop/hackbyte-ai-mentor/audios/message_0.wav",
+    "duration": 5.10
+  },
+  "mouthCues": [
+    { "start": 0.00, "end": 0.01, "value": "X" },
+    { "start": 0.01, "end": 0.15, "value": "C" },
+    { "start": 0.15, "end": 0.43, "value": "E" },
+    { "start": 0.43, "end": 0.57, "value": "C" },
+    { "start": 0.57, "end": 0.78, "value": "B" },
+    { "start": 0.78, "end": 0.87, "value": "D" },
+    { "start": 0.87, "end": 0.91, "value": "C" },
+    { "start": 0.91, "end": 1.00, "value": "A" },
+    { "start": 1.00, "end": 1.12, "value": "B" },
+    { "start": 1.12, "end": 1.26, "value": "C" },
+    { "start": 1.26, "end": 1.40, "value": "B" },
+    { "start": 1.40, "end": 1.61, "value": "F" },
+    { "start": 1.61, "end": 1.96, "value": "B" },
+    { "start": 1.96, "end": 2.03, "value": "A" },
+    { "start": 2.03, "end": 2.30, "value": "B" },
+    { "start": 2.30, "end": 2.37, "value": "D" },
+    { "start": 2.37, "end": 2.44, "value": "B" },
+    { "start": 2.44, "end": 2.58, "value": "C" },
+    { "start": 2.58, "end": 2.65, "value": "B" },
+    { "start": 2.65, "end": 2.73, "value": "A" },
+    { "start": 2.73, "end": 2.89, "value": "E" },
+    { "start": 2.89, "end": 3.24, "value": "A" },
+    { "start": 3.24, "end": 3.28, "value": "B" },
+    { "start": 3.28, "end": 3.46, "value": "C" },
+    { "start": 3.46, "end": 3.60, "value": "B" },
+    { "start": 3.60, "end": 3.67, "value": "C" },
+    { "start": 3.67, "end": 3.74, "value": "B" },
+    { "start": 3.74, "end": 3.88, "value": "E" },
+    { "start": 3.88, "end": 3.96, "value": "A" },
+    { "start": 3.96, "end": 4.31, "value": "B" },
+    { "start": 4.31, "end": 4.45, "value": "C" },
+    { "start": 4.45, "end": 4.66, "value": "B" },
+    { "start": 4.66, "end": 5.10, "value": "X" }
+  ]
+}
