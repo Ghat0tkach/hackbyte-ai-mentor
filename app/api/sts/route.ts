@@ -5,7 +5,7 @@ import { convertAudioToText } from '@/lib/server-utils/speech-to-text';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { google } from '@ai-sdk/google';
-import { generateSystemDesignResponse } from '../tts/route';
+import { generateDSAResponse, generateSystemDesignResponse } from '../tts/route';
 
 // Default response in case of errors
 const defaultResponse = {
@@ -47,7 +47,10 @@ export async function POST(request: NextRequest) {
     try {
       if (interactionType === "system-design") {
         aiResponse = await generateSystemDesignResponse(userMessage);
-      } else {
+      } else if(interactionType === "dsa"){
+        // Default to mentorship response
+        aiResponse = await generateDSAResponse(userMessage);
+      }{
         // Default to mentorship response
         aiResponse = await generateJackResponse(userMessage);
       }

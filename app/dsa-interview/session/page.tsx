@@ -18,6 +18,10 @@ import { LeetCodeQuestion } from "@/utils/csv-loader";
 import { QuestionSelector } from "@/components/dsa-template/question-selector";
 import { QuestionDisplay } from "@/components/dsa-template/question-display";
 import { makeSubmission } from "@/utils/services";
+import { Canvas } from "@react-three/fiber";
+import { CameraControls, Environment } from "@react-three/drei";
+import { Scenario } from "@/components/avatar/scenario";
+import { ChatBubble } from "@/components/ui/chat-bubble";
 
 // Improve the stripHtml function to better handle HTML tags
 const stripHtml = (str: string): string => {
@@ -80,7 +84,32 @@ export default function LeetCodeUI() {
   // Get company and difficulty from localStorage
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
+  const [canvasError, setCanvasError] = useState(false);
 
+  useEffect(() => {
+    if (currentQuestion) {
+      localStorage.setItem('currentDSAQuestion', JSON.stringify({
+        qid: currentQuestion.qid,
+        title: currentQuestion.title,
+        difficulty: currentQuestion.difficulty
+      }));
+    }
+  }, [currentQuestion]);
+  
+  // Adjusted camera coords for the avatar scene to focus on head/shoulders in circle
+  const avatarCameraCoords = {
+    CameraPosition: {
+      x: 0,
+      y: 1.8,  // Slightly higher to focus on head/shoulders
+      z: 0.5   // Closer zoom
+    },
+    CameraTarget: {
+      x: 0,
+      y: 1.8,  // Focus on face
+      z: 0
+    }
+  };
+  
   // Check if configuration exists in localStorage
   useEffect(() => {
     // Only run on client side
@@ -408,7 +437,7 @@ vector<int> twoSum(vector<int>& nums, int target) {
   const [currentTestCase, setCurrentTestCase] = useState(0);
   // State for single test result
   const [singleTestResult, setSingleTestResult] = useState(null);
-
+  const cameraControlsRef = React.useRef(); // Create a ref for CameraControls
 
   // Function to process a single test case result
   const processTestResult = (response, test) => {
@@ -788,6 +817,13 @@ vector<int> twoSum(vector<int>& nums, int target) {
           </ResizablePanel>
         </ResizablePanelGroup>
       )}
+       <ChatBubble
+            id="dsa-interview-chat"
+            type="dsa"
+            title="dsa-interview"
+            position={{ x: 16, y: 16 }}
+            className="z-50 max-w-xs"
+          />
   
       {/* Update Dialog styling */}
       <Dialog open={showResultsDialog} onOpenChange={setShowResultsDialog}>

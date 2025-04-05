@@ -32,21 +32,20 @@ export async function POST(request: NextRequest) {
     
     console.log("Proceeding to AI model");
     
-    // Initialize AI model
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-pro",
-      generationConfig: {
-        temperature: 0.2,
-      }
-    });
+
     
     // Process with Gemini and Vercel AI SDK based on interaction type
     let aiResponse;
     try {
       if (interactionType === "system-design") {
         aiResponse = await generateSystemDesignResponse(userMessage);
-      } else {
+      } else if(interactionType=="analysis"){
+      aiResponse = await generateAnalysisResponse(userMessage); // Assuming you have a function for this in your ap
+      } else if(interactionType=="dsa"){
+        // Default to mentorship response
+        aiResponse = await generateDSAResponse(userMessage);
+      }
+      else {
         // Default to mentorship response
         aiResponse = await generateJackResponse(userMessage);
       }
@@ -85,11 +84,6 @@ const jackResponseSchema = z.object({
           `Animation to be used by the AI. Select from: Idle, TalkingOne, TalkingThree, SadIdle, 
           Defeated, Angry, Surprised, DismissingGesture, and ThoughtfulHeadShake.`
         ),
-      mermaid: z
-        .string()
-        .describe(
-          `Mermaid Diagram if user has asked any roadmap.`
-        ).optional(),
     })
   )
 });
@@ -213,6 +207,133 @@ export async function generateSystemDesignResponse(userMessage: string) {
       messages: [
         {
           text: "I'm sorry, I couldn't process your system design request at the moment. Please try again later.",
+          animation: "SadIdle",
+          facialExpression: "sad"
+        }
+      ]
+    };
+  }
+}
+  
+  
+export async function generateAnalysisResponse(userMessage: string) {
+  const systemInstruction = `
+    You are Jack, an expert mentor analyzing a student's system design or coding work.
+    Based on the current analysis report of their whiteboard, provide thoughtful feedback,
+    ask probing questions, and suggest improvements.
+    
+    Focus on:
+    1. Identifying potential bottlenecks or issues
+    2. Asking questions about scalability and edge cases
+    3. Suggesting alternative approaches
+    4. Encouraging deeper thinking about specific components
+    
+    You will always respond with a maximum of 3 messages.
+    Each message has properties for text, facialExpression, and animation.
+    
+    Keep responses constructive and encouraging, using appropriate facial expressions and animations.
+
+    Here is the current analysis report and question text:
+    ${userMessage}
+  `;
+
+  try {
+    const { object: response } = await generateObject({
+      model: google('gemini-1.5-pro', {
+        structuredOutputs: false,
+      }),
+      schema: jackResponseSchema,
+      prompt: systemInstruction,
+      maxTokens: 1000
+    });
+
+    return response;
+  } catch (error) {
+    console.error("Error generating analysis response:", error);
+    return {
+      messages: [
+        {
+          text: "I couldn't analyze your design at the moment. Let's try again.",
+          animation: "ThoughtfulHeadShake",
+          facialExpression: "default"
+        }
+      ]
+    };
+  }
+}
+
+
+// Define the DSA schema
+const dsaResponseSchema = z.object({
+  messages: z.array(
+    z.object({
+      text: z.string().describe("Text to be spoken by the AI"),
+      facialExpression: z
+        .string()
+        .describe(
+          "Facial expression to be used by the AI. Select from: smile, sad, angry, surprised, funnyFace, and default"
+        ),
+      animation: z
+        .string()
+        .describe(
+          `Animation to be used by the AI. Select from: Idle, TalkingOne, TalkingThree, SadIdle, 
+          Defeated, Angry, Surprised, DismissingGesture, and ThoughtfulHeadShake.`
+        ),
+   
+      complexity: z.object({
+        time: z.string(),
+        space: z.string()
+      }).optional().describe("Time and space complexity analysis"),
+      tools: z.object({
+        type: z.enum(["diagram", "none"]).describe("Type of tool to use"),
+        action: z.string().describe("Action to perform with the tool"),
+        code: z.string().optional().describe("Code snippet for implementation"),
+        parameters: z.record(z.any()).describe("Parameters for the tool action")
+      }).optional().describe("Tool use information when the AI needs to use external tools")
+    })
+  )
+});
+
+export async function generateDSAResponse(userMessage: string) {
+  const systemInstruction = `
+    You are a DSA expert named Jack. You help users understand data structures and algorithms,
+    solve coding problems, and optimize solutions.
+    
+    You will always respond with a maximum of 3 messages.
+    Each message has properties for text, facialExpression, and animation.
+    
+    The different facial expressions are: smile, sad, angry, surprised, funnyFace, and default.
+    The different animations are: Idle, TalkingOne, TalkingThree, SadIdle, Defeated, Angry, 
+    Surprised, DismissingGesture and ThoughtfulHeadShake.
+    
+    When explaining solutions:
+    1. Start with the intuition and approach
+    2. Provide code implementation when needed
+    3. Analyze time and space complexity
+    4. Suggest optimizations if possible
+    
+    
+    Use appropriate animations and expressions to make the explanation engaging.
+    Break down complex concepts into simpler parts.
+  `;
+
+  try {
+    const { object: response } = await generateObject({
+      model: google('gemini-2.0-flash', {
+        structuredOutputs: false,
+      }),
+      schema: dsaResponseSchema,
+      prompt: `${systemInstruction}\n\nUser Message: ${userMessage}`,
+      maxTokens: 1500
+    });
+
+    return response;
+  } catch (error) {
+    console.error("Error generating DSA response:", error);
+    return {
+      messages: [
+        {
+          text: "I'm sorry, I couldn't process your DSA request at the moment. Please try again later.",
           animation: "SadIdle",
           facialExpression: "sad"
         }
