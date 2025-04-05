@@ -5,8 +5,10 @@ import { useRef, useState, useEffect } from "react"
 import type { Shape, ShapeType, WhiteboardProps, ConnectionType } from "../types"
 import { drawArrow, ShapeRenderers } from "../helper"
 import { TextInputOverlay, ToolBar } from "./whiteboard-components"
+import { useSpeech } from "@/hooks/use-speech"
+import { m } from "framer-motion"
 
-const Whiteboard: React.FC<WhiteboardProps> = ({ width = "100%", height = "100%", onExport, onImport, onStream }) => {
+const Whiteboard: React.FC<WhiteboardProps> = ({ width = "100%", height = "100%", onExport, onImport, onStream, selectedQuestion }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [context, setContext] = useState<CanvasRenderingContext2D | null>(null)
   const [isDrawing, setIsDrawing] = useState(false)
@@ -27,6 +29,53 @@ const Whiteboard: React.FC<WhiteboardProps> = ({ width = "100%", height = "100%"
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [isConnecting, setIsConnecting] = useState(false)
   const [connectionStart, setConnectionStart] = useState<Shape | null>(null)
+  const { tts } = useSpeech();
+
+  // const captureScreenshot = async () => {
+  //   if (canvasRef.current) {
+  //     const dataURL = canvasRef.current.toDataURL("image/png");
+  //     console.log("Screenshot captured");
+      
+  //     try {
+  //       const response = await fetch('/api/image-analysis', {
+  //         method: 'POST',
+  //         headers: {
+  //           'Content-Type': 'application/json',
+  //         },
+  //         body: JSON.stringify({ 
+  //           imageData: dataURL.split(',')[1],
+  //           questionText: selectedQuestion || "system design" 
+  //         }),
+  //       });
+
+  //       if (!response.ok) {
+  //         throw new Error(`HTTP error! Status: ${response.status}`);
+  //       }
+
+  //       const data = await response.json();
+  //       console.log("AI analysis:", data.caption);
+        
+  //       // Handle TTS with the analysis result
+  //       if (data.caption) {
+  //         await tts(
+  //           `Current selected question is: ${selectedQuestion} and analysis: ${data.caption}`,
+  //           "analysis"
+  //         );
+  //       }
+  //     } catch (error) {
+  //       console.error("Error processing screenshot:", error);
+  //     }
+  //   } else {
+  //     console.error("Canvas not available for screenshot");
+  //   }
+  // };
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     captureScreenshot();
+  //   }, 15000); // Capture screenshot every 15 seconds
+
+  //   return () => clearInterval(interval); // Cleanup interval on component unmount
+  // }, []); 
 
   // Initialize canvas and set up event listeners
   useEffect(() => {

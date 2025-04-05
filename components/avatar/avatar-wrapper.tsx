@@ -3,7 +3,7 @@
 import React from "react";
 import { Canvas } from "@react-three/fiber";
 import { Avatar } from "./avatar";
-import { Loader } from "@react-three/drei";
+
 
 interface AvatarWrapperProps {
   size?: number;
@@ -11,8 +11,7 @@ interface AvatarWrapperProps {
 
 export const AvatarWrapper: React.FC<AvatarWrapperProps> = ({ size = 200 }) => {
   return (
-    <div style={{ width: size, height: size, position: "relative" }}>
-      <Loader />
+    <div style={{ width: size, height: size, position: "relative", zIndex:999 }}>
       <Canvas 
         shadows 
         camera={{ position: [0, 1.5, 2.5], fov: 30 }}

@@ -18,6 +18,10 @@ import { LeetCodeQuestion } from "@/utils/csv-loader";
 import { QuestionSelector } from "@/components/dsa-template/question-selector";
 import { QuestionDisplay } from "@/components/dsa-template/question-display";
 import { makeSubmission } from "@/utils/services";
+import { Canvas } from "@react-three/fiber";
+import { CameraControls, Environment } from "@react-three/drei";
+import { Scenario } from "@/components/avatar/scenario";
+import { ChatBubble } from "@/components/ui/chat-bubble";
 
 
 const languageMap: { [key: string]: number } = {
@@ -44,7 +48,32 @@ export default function LeetCodeUI() {
   // Get company and difficulty from localStorage
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
+  const [canvasError, setCanvasError] = useState(false);
 
+  useEffect(() => {
+    if (currentQuestion) {
+      localStorage.setItem('currentDSAQuestion', JSON.stringify({
+        qid: currentQuestion.qid,
+        title: currentQuestion.title,
+        difficulty: currentQuestion.difficulty
+      }));
+    }
+  }, [currentQuestion]);
+  
+  // Adjusted camera coords for the avatar scene to focus on head/shoulders in circle
+  const avatarCameraCoords = {
+    CameraPosition: {
+      x: 0,
+      y: 1.8,  // Slightly higher to focus on head/shoulders
+      z: 0.5   // Closer zoom
+    },
+    CameraTarget: {
+      x: 0,
+      y: 1.8,  // Focus on face
+      z: 0
+    }
+  };
+  
   // Check if configuration exists in localStorage
   useEffect(() => {
     // Only run on client side
@@ -358,7 +387,7 @@ vector<int> twoSum(vector<int>& nums, int target) {
   const [currentTestCase, setCurrentTestCase] = useState(0);
   // State for single test result
   const [singleTestResult, setSingleTestResult] = useState(null);
-
+  const cameraControlsRef = React.useRef(); // Create a ref for CameraControls
 
   // Function to process a single test case result
   const processTestResult = (response, test) => {
@@ -616,6 +645,45 @@ vector<int> twoSum(vector<int>& nums, int target) {
                 }}
               />
             </div>
+            <div className="absolute bottom-8 left-8 w-50 h-50 rounded-full overflow-hidden border-2 border-blue-500 shadow-lg">
+            <div className="w-full h-full bg-gradient-to-b from-gray-800 to-gray-900">
+              {!canvasError ? (
+                <Canvas
+                  shadows
+                  camera={{ position: [0, 2.0, 0.5], fov: 25 }} // Adjusted y position for a higher view
+                  style={{ width: '100%', height: '100%' }}
+                  gl={{ 
+                    alpha: true,
+                    antialias: true,
+                    powerPreference: "high-performance",
+                    failIfMajorPerformanceCaveat: false
+                  }}
+                  onCreated={({ gl }) => {
+                    if (!gl.getContext()) {
+                      console.error("WebGL context not available");
+                      setCanvasError(true);
+                    }
+                  }}
+                  onError={() => setCanvasError(true)}
+                >
+                  <React.Suspense fallback={null}>
+                    <CameraControls ref={cameraControlsRef} />
+                    <Scenario 
+                      environment={false}
+                      scale={1.8}
+                      cameraCoords={avatarCameraCoords}
+                      hidden={false}
+                    />
+                    <Environment preset="city" />
+                  </React.Suspense>
+                </Canvas>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-white text-xs text-center p-2">
+                  Unable to load 3D avatar
+                </div>
+              )}
+            </div>
+          </div>
 
             <div className="border-t border-border p-3 flex justify-between items-center">
               <div>
@@ -738,7 +806,15 @@ vector<int> twoSum(vector<int>& nums, int target) {
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
+      
       )}
+       <ChatBubble
+            id="dsa-interview-chat"
+            type="dsa"
+            title="dsa-interview"
+            position={{ x: 16, y: 16 }}
+            className="z-50 max-w-xs"
+          />
     </div>
   )
 }

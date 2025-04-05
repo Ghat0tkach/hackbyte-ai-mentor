@@ -5,7 +5,7 @@ export const ChatInterface = ({ hidden, type ,containerClassName = "", showHeade
   const input = useRef();
   const { tts, loading, message, startRecording, stopRecording, recording } = useSpeech();
   
-  
+  console.log(type)
 
   // Add console logs to debug recording state
   const handleRecording = () => {
@@ -19,6 +19,7 @@ export const ChatInterface = ({ hidden, type ,containerClassName = "", showHeade
   };
 
   const sendMessage = () => {
+
     const text = input.current.value;
     if (!loading && !message) {
       tts(text,type);

@@ -183,6 +183,7 @@ export const SpeechProvider = ({ children }: SpeechProviderProps) => {
 
     setMessageHistory(prev => [...prev, { role: "user", text: message }]);
     setLoading(true);
+
     try {
       // If type is system-design, include the current question from systemDesignStore
       let requestBody = { message, type };
@@ -190,6 +191,17 @@ export const SpeechProvider = ({ children }: SpeechProviderProps) => {
         requestBody = { 
           message: `Current question: ${systemDesignStore.currentQuestionText}\n\n${message}`, 
           type 
+        };
+      }else if (type === 'analysis') {
+        requestBody = {
+          message,
+          type
+        };
+      }else if(type==="dsa"){
+        const question = localStorage.getItem('currentDSAQuestion');
+        requestBody = {
+          message: `Current question: ${question}\n\n${message}`, 
+          type
         };
       }
 
@@ -214,38 +226,43 @@ export const SpeechProvider = ({ children }: SpeechProviderProps) => {
       // Extract tools from response
       const tools = [];
       
-      // Check for mermaid diagrams
-      if (response.some(msg => msg.mermaid)) {
-        const mermaidMsg = response.find(msg => msg.mermaid);
-        if (mermaidMsg && mermaidMsg.mermaid) {
-          // Replace newlines with escaped newlines
-          mermaidMsg.mermaid = mermaidMsg.mermaid.replace(/\n/g, '\\n');
-          
+      // Check for tools in the response messages
+      response.forEach(msg => {
+        if (msg.tools) {
+          tools.push({
+            type: msg.tools.type,
+            content: msg.tools.parameters,
+            action: msg.tools.action
+          });
+        }
+        // Keep existing checks for other tool types
+        if (msg.mermaid) {
           tools.push({
             type: 'mermaid',
-            content: mermaidMsg.mermaid,
+            content: msg.mermaid.replace(/\n/g, '\\n'),
             language: 'mermaid'
           });
         }
-      }
-      
-      // Check for code snippets
-      if (response.some(msg => msg.code)) {
-        const codeMsg = response.find(msg => msg.code);
-        tools.push({
-          type: 'code',
-          content: codeMsg?.code,
-          language: codeMsg?.codeLanguage || 'javascript'
-        });
-      }
-      
-      // Check for images or other tool outputs
-      if (response.some(msg => msg.image)) {
-        tools.push({
-          type: 'image',
-          content: response.find(msg => msg.image)?.image
-        });
-      }
+        if (msg.code) {
+          tools.push({
+            type: 'code',
+            content: msg.code,
+            language: msg.codeLanguage || 'javascript'
+          });
+        }
+        if (msg.image) {
+          tools.push({
+            type: 'image',
+            content: msg.image
+          });
+        }
+        if (msg.diagram) {
+          tools.push({
+            type: 'diagram',
+            content: msg.diagram
+          });
+        }
+      });
       
       setMessageHistory(prev => [...prev, { 
         role: "ai", 
