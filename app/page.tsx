@@ -513,12 +513,12 @@ export default function Home() {
               </p>
             </motion.div>
             
-            <div className="grid gap-8 md:grid-cols-3">
+            <div className="grid gap-8 md:grid-cols-4">
               <FeatureCard
                 icon={<MessageSquare className="h-6 w-6" />}
                 title="AI Mentor"
                 description="Talk with a personalized AI avatar for 1:1 mentorship."
-                link="/mentorship/    "
+                link="/mentorship/"
                 delay={0.1}
               />
               <FeatureCard
@@ -532,8 +532,15 @@ export default function Home() {
                 icon={<Code className="h-6 w-6" />}
                 title="DSA Interviewer"
                 description="Real-time mock interviews with a code editor, Gemini feedback, and Judge0 code evaluation."
-                link="/interviewer"
+                link="/dsa-interview/onboarding"
                 delay={0.3}
+              />
+              <FeatureCard
+                icon={<Database className="h-6 w-6" />}
+                title="Insight View"
+                description="Analyze your performance metrics and track your interview preparation progress."
+                link="/insights-view"
+                delay={0.4}
               />
             </div>
           </div>
