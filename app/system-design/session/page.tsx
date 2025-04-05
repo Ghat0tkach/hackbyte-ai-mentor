@@ -134,7 +134,7 @@ export default function SystemDesignSession() {
   const generateSystemDesign = async (questionText?: string) => {
     if (!streamFn) return;
     
-    const questionToUse = questionText || (selectedQuestion ? selectedQuestion.question : null);
+    const questionToUse = questionText || (selectedQuestion ? selectedQuestion : null);
     if (!questionToUse) return;
     
     setIsGenerating(true);
