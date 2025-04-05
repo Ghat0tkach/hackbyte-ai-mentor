@@ -2,7 +2,8 @@ import type React from "react"
 import "@/app/globals.css"
 import { Inter } from "next/font/google"
 import { ThemeProvider } from "next-themes"
-import { SessionProvider } from "@/components/session-provider"
+import { Speech } from "lucide-react"
+import { SpeechProvider } from "@/hooks/use-speech"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -14,11 +15,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <SessionProvider>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            {children}
-          </ThemeProvider>
-        </SessionProvider>
+        
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
+        <SpeechProvider>
+          {children}
+         </SpeechProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
