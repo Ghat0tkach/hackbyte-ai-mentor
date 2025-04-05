@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AuthStatus } from "@/components/auth-status"
 
+
 // Typewriter text animation component
 const TypewriterText = ({ text, delay = 0, speed = 50 }: { 
   text: string;

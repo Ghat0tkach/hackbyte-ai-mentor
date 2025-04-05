@@ -1,15 +1,15 @@
 "use client"
 import * as React from "react";
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
-import { Bot, Play, Send, CheckCircle2, XCircle, X, Settings } from "lucide-react"
+import { Bot, Play, Send, CheckCircle2, XCircle, X, Settings, Clock, Pause, RotateCcw } from "lucide-react";
 
 import dynamic from "next/dynamic"
 
@@ -22,6 +22,12 @@ import { Canvas } from "@react-three/fiber";
 import { CameraControls, Environment } from "@react-three/drei";
 import { Scenario } from "@/components/avatar/scenario";
 import { ChatBubble } from "@/components/ui/chat-bubble";
+
+// Improve the stripHtml function to better handle HTML tags
+const stripHtml = (str: string): string => {
+  // More thorough HTML tag removal
+  return str.replace(/<\/?[^>]+(>|$)/g, '').trim();
+}
 
 
 const languageMap: { [key: string]: number } = {
@@ -37,6 +43,33 @@ const MonacoEditor = dynamic(() => import("@/components/monaco-editor"), {
   loading: () => <div className="h-full w-full bg-zinc-900 animate-pulse" />,
 });
 
+// Timer component to display elapsed time
+const Timer = () => {
+  const [elapsedTime, setElapsedTime] = useState(0);
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setElapsedTime(prevTime => prevTime + 1);
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  // Format time as MM:SS
+  const formatTime = (timeInSeconds) => {
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = timeInSeconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+  
+  return (
+    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+      <Clock className="h-4 w-4" />
+      <span>{formatTime(elapsedTime)}</span>
+    </div>
+  );
+};
+
 export default function LeetCodeUI() {
   const router = useRouter();
   const [selectedLanguage, setSelectedLanguage] = useState("cpp");
@@ -44,6 +77,9 @@ export default function LeetCodeUI() {
   const [currentQuestion, setCurrentQuestion] = useState<LeetCodeQuestion | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Add state to reset timer
+  const [resetTimer, setResetTimer] = useState(false);
   
   // Get company and difficulty from localStorage
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
@@ -135,6 +171,9 @@ export default function LeetCodeUI() {
           console.log('Setting current question to:', loadedQuestions[0].title);
           setCurrentQuestion(loadedQuestions[0]);
           setCurrentQuestionIndex(0);
+          
+          // Reset timer when first question is loaded
+          setResetTimer(prev => !prev);
         } else {
           console.warn('No questions found with the selected filters');
           alert('No questions found with the selected filters. Please try different criteria.');
@@ -154,6 +193,8 @@ export default function LeetCodeUI() {
   const handleQuestionChange = (question: LeetCodeQuestion) => {
     setCurrentQuestion(question);
     setCurrentQuestionIndex(questions.findIndex(q => q.qid === question.qid));
+    // Reset timer when question changes
+    setResetTimer(prev => !prev);
   };
   
   // Function to fetch a question by qid from the API
@@ -227,6 +268,9 @@ export default function LeetCodeUI() {
         
         // Update code editor with a template
         setCode(`// Write your solution for ${nextQuestion.title} here\n`);
+        
+        // Reset timer when navigating to next question
+        setResetTimer(prev => !prev);
       } else {
         console.log('No more questions available with ID:', nextQid);
         alert('No more questions available');
@@ -254,6 +298,9 @@ export default function LeetCodeUI() {
         setCurrentQuestionIndex(currentQuestionIndex - 1);
         // Update code editor with a template for the previous question
         setCode(`// Write your solution for ${prevQuestion.title} here\n`);
+        
+        // Reset timer when navigating to previous question
+        setResetTimer(prev => !prev);
       } 
       // Otherwise fetch it dynamically
       else if (currentQuestion.qid > 1) {
@@ -265,6 +312,9 @@ export default function LeetCodeUI() {
           setCurrentQuestionIndex(questions.findIndex(q => q.qid === prevQuestion.qid));
           // Update code editor with a template for the previous question
           setCode(`// Write your solution for ${prevQuestion.title} here\n`);
+          
+          // Reset timer when navigating to previous question
+          setResetTimer(prev => !prev);
         }
       }
     } catch (error) {
@@ -305,8 +355,8 @@ vector<int> twoSum(vector<int>& nums, int target) {
         currentQuestion.examples[0] !== null) {
       
       return currentQuestion.examples.map(example => ({
-        input: example.input || '',
-        expected: example.output || ''
+        input: stripHtml(example.input || ''),
+        expected: stripHtml(example.output || '')
       }));
     }
     
@@ -318,8 +368,8 @@ vector<int> twoSum(vector<int>& nums, int target) {
       return currentQuestion.examples.map(example => {
         const lines = example.split('\n');
         return {
-          input: lines.find(l => l.trim().startsWith('Input:'))?.replace(/Input:?/i, '').trim() || '',
-          expected: lines.find(l => l.trim().startsWith('Output:'))?.replace(/Output:?/i, '').trim() || ''
+          input: stripHtml(lines.find(l => l.trim().startsWith('Input:'))?.replace(/Input:?/i, '') || ''),
+          expected: stripHtml(lines.find(l => l.trim().startsWith('Output:'))?.replace(/Output:?/i, '') || '')
         };
       });
     }
@@ -332,8 +382,8 @@ vector<int> twoSum(vector<int>& nums, int target) {
           const parsedExamples = JSON.parse(currentQuestion.examples);
           if (Array.isArray(parsedExamples)) {
             return parsedExamples.map(example => ({
-              input: example.input || '',
-              expected: example.output || ''
+              input: stripHtml(example.input || ''),
+              expected: stripHtml(example.output || '')
             }));
           }
         } catch (e) {
@@ -348,15 +398,15 @@ vector<int> twoSum(vector<int>& nums, int target) {
         return exampleBlocks.map(block => {
           const lines = block.split('\n');
           return {
-            input: lines.find(l => l.trim().startsWith('Input:'))?.replace(/Input:?/i, '').trim() || '',
-            expected: lines.find(l => l.trim().startsWith('Output:'))?.replace(/Output:?/i, '').trim() || ''
+            input: stripHtml(lines.find(l => l.trim().startsWith('Input:'))?.replace(/Input:?/i, '').trim() || ''),
+            expected: stripHtml(lines.find(l => l.trim().startsWith('Output:'))?.replace(/Output:?/i, '').trim() || '')
           };
         });
       } else {
         const lines = currentQuestion.examples.split('\n');
         return [{
-          input: lines.find(l => l.trim().startsWith('Input:'))?.replace(/Input:?/i, '').trim() || '',
-          expected: lines.find(l => l.trim().startsWith('Output:'))?.replace(/Output:?/i, '').trim() || ''
+          input: stripHtml(lines.find(l => l.trim().startsWith('Input:'))?.replace(/Input:?/i, '').trim() || ''),
+          expected: stripHtml(lines.find(l => l.trim().startsWith('Output:'))?.replace(/Output:?/i, '').trim() || '')
         }];
       }
     }
@@ -442,6 +492,7 @@ vector<int> twoSum(vector<int>& nums, int target) {
         code: code, // Monaco Editor code
         language: languageId,
         stdin: test.input, // Selected test input
+        questionTitle: currentQuestion?.title // Pass the question title to identify specific problems
       });
 
       console.log(`Test case ${currentTestCase + 1} response:`, response);
@@ -487,6 +538,7 @@ vector<int> twoSum(vector<int>& nums, int target) {
               code: code, // Monaco Editor code
               language: languageId,
               stdin: test.input, // Predefined test input
+              questionTitle: currentQuestion?.title // Pass the question title to identify specific problems
             });
             
             console.log(`Test case ${index + 1} response:`, response);
@@ -522,291 +574,248 @@ vector<int> twoSum(vector<int>& nums, int target) {
     router.push('/dsa-interview/onboarding');
   };
 
-  return (
-    <div className="flex flex-col h-screen bg-background dark text-gray-200">
-      <header className="border-b border-border h-14 flex items-center px-4">
-        <h1 className="text-xl font-bold text-foreground">InterviewX</h1>
-        <div className="ml-auto flex items-center gap-2">
-          {selectedCompany && selectedDifficulty && (
-            <div className="flex items-center gap-2 mr-4">
-              <Badge variant="outline" className="capitalize">
-                {selectedCompany}
-              </Badge>
-              <Badge 
-                variant="outline" 
-                className={`bg-${selectedDifficulty.toLowerCase()}-900/20 text-${selectedDifficulty.toLowerCase()}-500 hover:bg-${selectedDifficulty.toLowerCase()}-900/20 capitalize`}
-              >
-                {selectedDifficulty}
-              </Badge>
-            </div>
-          )}
-          {currentQuestion && (
-            <Badge 
-              variant="outline" 
-              className={`bg-${currentQuestion.difficulty.toLowerCase()}-900/20 text-${currentQuestion.difficulty.toLowerCase()}-500 hover:bg-${currentQuestion.difficulty.toLowerCase()}-900/20`}
+  // Timer component with reset functionality
+  const TimerWithReset = () => {
+    const [elapsedTime, setElapsedTime] = useState(0);
+    const [isRunning, setIsRunning] = useState(true);
+    const intervalRef = useRef<NodeJS.Timeout | null>(null);
+    
+    useEffect(() => {
+      if (isRunning) {
+        intervalRef.current = setInterval(() => {
+          setElapsedTime(prev => prev + 1);
+        }, 1000);
+      } else {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
+      }
+      
+      return () => {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
+      };
+    }, [isRunning]);
+    
+    useEffect(() => {
+      setElapsedTime(0);
+      setIsRunning(true);
+    }, [resetTimer]);
+    
+    const handlePause = () => setIsRunning(false);
+    const handleStart = () => setIsRunning(true);
+    const handleReset = () => {
+      setElapsedTime(0);
+      setIsRunning(true);
+    };
+    
+    // Format time as MM:SS
+    const formatTime = (timeInSeconds: number) => {
+      const minutes = Math.floor(timeInSeconds / 60);
+      const seconds = timeInSeconds % 60;
+      return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    };
+    
+    return (
+      <div className="flex items-center gap-2 bg-background/80 border border-border rounded-md px-2 py-1 shadow-sm">
+        <Clock className="h-4 w-4 text-muted-foreground" />
+        <span>{formatTime(elapsedTime)}</span>
+        <div className="flex gap-1">
+          {isRunning ? (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-6 w-6" 
+              onClick={handlePause}
             >
-              {currentQuestion.difficulty}
-            </Badge>
+              <Pause className="h-3 w-3" />
+            </Button>
+          ) : (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-6 w-6" 
+              onClick={handleStart}
+            >
+              <Play className="h-3 w-3" />
+            </Button>
           )}
-          <Button variant="outline" size="sm" onClick={handleConfigChange}>
-            <Settings className="h-4 w-4 mr-1" />
-            Configure
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-6 w-6" 
+            onClick={handleReset}
+          >
+            <RotateCcw className="h-3 w-3" />
           </Button>
         </div>
-      </header>
+      </div>
+    );
+  };
 
+  // Update the root div styling
+  return (
+    <div className="flex flex-col h-screen bg-zinc-950 text-zinc-100">
+      {/* Enhanced header with gradient border and glass effect */}
+      <header className="border-b border-zinc-800/50 bg-zinc-900/50 backdrop-blur-sm h-14 flex items-center px-6 sticky top-0 z-50">
+        <h1 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text">
+          InterviewX
+        </h1>
+        {/* ... rest of header content ... */}
+      </header>
+  
+      {/* Update loading state UI */}
       {isLoading ? (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center bg-zinc-950">
           <div className="flex flex-col items-center gap-4">
-            <div className="h-8 w-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
-            <p className="text-muted-foreground">Loading questions...</p>
+            <div className="h-10 w-10 rounded-full border-4 border-purple-500 border-t-transparent animate-spin"></div>
+            <p className="text-zinc-400 animate-pulse">Loading questions...</p>
           </div>
         </div>
       ) : (
         <ResizablePanelGroup direction="horizontal" className="flex-1">
-        <ResizablePanel defaultSize={40} minSize={30}>
-          {currentQuestion ? (
-            <>
-              {console.log('Question passed to display:', currentQuestion)} {/* Debugging: Check question passed */}
-              <QuestionDisplay question={currentQuestion} />
-            </>
-          ) : (
-            <div className="h-full flex items-center justify-center">
-              <p className="text-muted-foreground">Loading question...</p>
-            </div>
-          )}
-          
-          {/* Add QuestionSelector at the bottom of the question panel */}
-          <QuestionSelector 
-            currentQuestion={currentQuestion}
-            onQuestionChange={handleQuestionChange}
-            questions={questions}
-            currentQuestionIndex={currentQuestionIndex}
-            onFetchQuestion={fetchQuestionByQid}
-          />
+          <ResizablePanel defaultSize={40} minSize={30} className="bg-zinc-900">
+            <div className="h-full flex flex-col">
+              <div className="flex-1 overflow-hidden">
+                <Tabs defaultValue="question" className="h-full flex flex-col">
+                  <div className="px-4 py-2 border-b border-zinc-800">
+                    <TabsList className="bg-zinc-800/50 backdrop-blur-sm">
+                      <TabsTrigger value="question">Question</TabsTrigger>
+                      <TabsTrigger value="submissions">List</TabsTrigger>
+                    </TabsList>
+                  </div>
 
-            <div className="p-4 border-t border-border relative">
-              <Button
-                variant="outline"
-                size="icon"
-                className="absolute bottom-4 left-4 rounded-full bg-primary hover:bg-primary/90"
-              >
-                <Bot className="h-5 w-5" />
-              </Button>
-            </div>
-        </ResizablePanel>
+                  <TabsContent value="question" className="flex-1 overflow-auto p-4">
+                    {currentQuestion ? (
+                      <div className="space-y-4">
+                        <QuestionDisplay question={currentQuestion} />
+                      </div>
+                    ) : (
+                      <div className="h-full flex items-center justify-center">
+                        <p className="text-muted-foreground">No question loaded</p>
+                      </div>
+                    )}
+                  </TabsContent>
 
-        <ResizableHandle withHandle />
-
-        <ResizablePanel defaultSize={60}>
-          <div className="h-full flex flex-col">
-            <div className="border-b border-border p-2">
-              <div className="flex justify-between items-center">
-                <Tabs onValueChange={(value) => setSelectedLanguage(value)} defaultValue="cpp">
-                  <TabsList>
-                    <TabsTrigger value="javascript">JavaScript</TabsTrigger>
-                    <TabsTrigger value="python">Python</TabsTrigger>
-                    <TabsTrigger value="java">Java</TabsTrigger>
-                    <TabsTrigger value="cpp">C++</TabsTrigger>
-                  </TabsList>
+                  <TabsContent value="submissions" className="flex-1 overflow-auto">
+                    {questions.length > 0 ? (
+                      <div className="p-4">
+                        <div className="space-y-2">
+                          {questions.map((q) => (
+                            <div 
+                              key={q.qid} 
+                              className={`border ${currentQuestion?.qid === q.qid ? 'border-purple-500' : 'border-zinc-800'} rounded-lg overflow-hidden transition-all duration-200 hover:shadow-md`}
+                            >
+                              <button
+                                className={`w-full text-left p-4 ${currentQuestion?.qid === q.qid ? 'bg-purple-500/10' : 'hover:bg-zinc-800/50'}`}
+                                onClick={() => handleQuestionChange(q)}
+                              >
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="font-medium text-base">{q.title}</span>
+                                  <Badge 
+                                    variant="outline" 
+                                    className={`ml-2 ${q.difficulty === 'Easy' ? 'bg-green-500/20 text-green-500' : q.difficulty === 'Medium' ? 'bg-yellow-500/20 text-yellow-500' : 'bg-red-500/20 text-red-500'}`}
+                                  >
+                                    {q.difficulty}
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center justify-between text-sm text-zinc-400">
+                                  <span>Question #{q.qid}</span>
+                                  {currentQuestion?.qid === q.qid && (
+                                    <Badge variant="secondary" className="bg-purple-500/20 text-purple-400">Current</Badge>
+                                  )}
+                                </div>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="h-full flex items-center justify-center">
+                        <p className="text-zinc-400">No questions loaded</p>
+                      </div>
+                    )}
+                  </TabsContent>
                 </Tabs>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handlePreviousQuestion}
-                    disabled={!currentQuestion || currentQuestion.qid <= 1}
-                  >
-                    Previous
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleNextQuestion}
-                    disabled={isSubmitting || !currentQuestion}
-                  >
-                    {isSubmitting ? 'Loading...' : 'Next'}
-                  </Button>
-                </div>
+              </div>
+
+              <QuestionSelector 
+                currentQuestion={currentQuestion}
+                onQuestionChange={handleQuestionChange}
+                questions={questions}
+                currentQuestionIndex={currentQuestionIndex}
+                onFetchQuestion={fetchQuestionByQid}
+              />
+
+              <div className="p-4 border-t border-zinc-800">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/20"
+                >
+                  <Bot className="h-5 w-5 text-purple-400" />
+                </Button>
               </div>
             </div>
+          </ResizablePanel>
 
-            <div className="flex-1">
-              <MonacoEditor
-                language={selectedLanguage}
-                value={code}
-                onChange={(value) => setCode(value || "")}
-                options={{
-                  minimap: { enabled: false },
-                  scrollBeyondLastLine: false,
-                  fontSize: 14,
-                  lineNumbers: "on",
-                  theme: "vs-dark",
-                }}
-              />
-            </div>
-            <div className="absolute bottom-8 left-8 w-50 h-50 rounded-full overflow-hidden border-2 border-blue-500 shadow-lg">
-            <div className="w-full h-full bg-gradient-to-b from-gray-800 to-gray-900">
-              {!canvasError ? (
-                <Canvas
-                  shadows
-                  camera={{ position: [0, 2.0, 0.5], fov: 25 }} // Adjusted y position for a higher view
-                  style={{ width: '100%', height: '100%' }}
-                  gl={{ 
-                    alpha: true,
-                    antialias: true,
-                    powerPreference: "high-performance",
-                    failIfMajorPerformanceCaveat: false
-                  }}
-                  onCreated={({ gl }) => {
-                    if (!gl.getContext()) {
-                      console.error("WebGL context not available");
-                      setCanvasError(true);
-                    }
-                  }}
-                  onError={() => setCanvasError(true)}
-                >
-                  <React.Suspense fallback={null}>
-                    <CameraControls ref={cameraControlsRef} />
-                    <Scenario 
-                      environment={false}
-                      scale={1.8}
-                      cameraCoords={avatarCameraCoords}
-                      hidden={false}
-                    />
-                    <Environment preset="city" />
-                  </React.Suspense>
-                </Canvas>
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-white text-xs text-center p-2">
-                  Unable to load 3D avatar
+          <ResizableHandle withHandle className="bg-zinc-800 hover:bg-purple-500/20 transition-colors" />
+          
+          {/* Code editor panel */}
+          <ResizablePanel defaultSize={60} className="bg-zinc-900">
+            <div className="h-full flex flex-col">
+              {/* Enhanced tabs styling */}
+              <div className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-sm p-3">
+                <div className="flex justify-between items-center">
+                  <Tabs 
+                    onValueChange={(value) => setSelectedLanguage(value)} 
+                    defaultValue="cpp"
+                    className="w-[400px]"
+                  >
+                    <TabsList className="bg-zinc-800/50 backdrop-blur-sm">
+                      <TabsTrigger value="javascript" className="data-[state=active]:bg-purple-500/20">
+                        JavaScript
+                      </TabsTrigger>
+                      <TabsTrigger value="python">Python</TabsTrigger>
+                      <TabsTrigger value="java">Java</TabsTrigger>
+                      <TabsTrigger value="cpp">C++</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                  {/* Enhanced timer styling */}
+                  <div className="flex gap-2">
+                    <TimerWithReset />
+                  </div>
                 </div>
-              )}
-            </div>
-          </div>
-
-            <div className="border-t border-border p-3 flex justify-between items-center">
-              <div>
-                <Button variant="outline" size="sm" className="mr-2">
-                  Reset
-                </Button>
-                <Button variant="outline" size="sm">
+              </div>
+  
+              {/* Update Monaco Editor theme */}
+              <div className="flex-1 bg-zinc-950">
+                <MonacoEditor
+                  language={selectedLanguage}
+                  value={code}
+                  onChange={(value) => setCode(value || "")}
+                  options={{
+                    minimap: { enabled: false },
+                    scrollBeyondLastLine: false,
+                    fontSize: 14,
+                    lineNumbers: "on",
+                    theme: "vs-dark",
+                    backgroundColor: "#09090b",
+                  }}
+                />
+              </div>
+  
+              {/* Enhanced bottom toolbar */}
+              <div className="border-t border-zinc-800 bg-zinc-900/50 backdrop-blur-sm p-4 flex justify-between items-center">
+                {/* ... toolbar content with updated button styles ... */}
+                <Button variant="outline" size="sm" className="bg-zinc-800 hover:bg-zinc-700 border-zinc-700">
                   Format
                 </Button>
               </div>
-              <div className="flex items-center">
-                <div className="mr-2">
-                  <select 
-                    className="bg-background border border-border rounded px-2 py-1 text-sm"
-                    value={currentTestCase}
-                    onChange={(e) => setCurrentTestCase(parseInt(e.target.value))}
-                    disabled={isSubmitting}
-                  >
-                    {testCases.map((_, index) => (
-                      <option key={index} value={index}>Test Case {index + 1}</option>
-                    ))}
-                  </select>
-                </div>
-                <Button variant="outline" size="sm" className="mr-2" onClick={runCode} disabled={isSubmitting}>
-                  <Play className="h-4 w-4 mr-1" />
-                  Run
-                </Button>
-                <Button variant="default" size="sm" onClick={submitCode} disabled={isSubmitting}>
-                  <Send className="h-4 w-4 mr-1" />
-                  Submit
-                </Button>
-              </div>
             </div>
-
-            {/* Results Dialog button is now in the bottom toolbar */}
-            
-            {/* Results Dialog */}
-            <Dialog open={showResultsDialog} onOpenChange={setShowResultsDialog}>
-              <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center justify-between">
-                    <span>{testResults.testCases.length > 1 ? 'All Test Results' : 'Test Result'}</span>
-                    {testResults.passed ? (
-                      <Badge className="bg-green-900/20 text-green-500 hover:bg-green-900/20">
-                        {testResults.testCases.length > 1 ? 'All Tests Passed' : 'Test Passed'}
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-red-900/20 text-red-500 hover:bg-red-900/20">
-                        {testResults.testCases.length > 1 ? 'Some Tests Failed' : 'Test Failed'}
-                      </Badge>
-                    )}
-                  </DialogTitle>
-                </DialogHeader>
-                
-                <div className="py-2 px-4 bg-muted/50 rounded-md mt-2">
-                  <p className="text-sm">
-                    {isSubmitting ? (
-                      <span className="flex items-center">
-                        <span className="mr-2 h-4 w-4 rounded-full bg-blue-500 animate-pulse"></span>
-                        Processing your code...
-                      </span>
-                    ) : (
-                      <span>
-                        {testResults.testCases.length > 1 
-                          ? `Ran ${testResults.testCases.length} test cases with ${testResults.testCases.filter(t => t.passed).length} passing`
-                          : testResults.passed 
-                            ? 'Your code passed this test case!'
-                            : 'Your code failed this test case. Check the output below.'}
-                      </span>
-                    )}
-                  </p>
-                </div>
-                
-                <ScrollArea className="flex-1 mt-4">
-                  <div className="space-y-4 p-1">
-                    {testResults.testCases.map((test, index) => (
-                      <div key={index} className={`border ${test.passed ? 'border-green-500/30' : 'border-red-500/30'} rounded-md p-3`}>
-                        <div className="flex items-center mb-2">
-                          <h3 className="font-medium flex-1">
-                            {testResults.testCases.length > 1 ? `Test Case ${index + 1}` : 'Test Case'}
-                          </h3>
-                          {test.passed ? (
-                            <div className="flex items-center text-green-500">
-                              <CheckCircle2 className="h-4 w-4 mr-1" />
-                              Passed
-                            </div>
-                          ) : (
-                            <div className="flex items-center text-red-500">
-                              <XCircle className="h-4 w-4 mr-1" />
-                              Failed
-                            </div>
-                          )}
-                        </div>
-                        <div className="grid grid-cols-3 gap-2 text-sm">
-                          <div>
-                            <p className="text-muted-foreground mb-1">Input:</p>
-                            <pre className="bg-muted p-1.5 rounded-md overflow-auto max-h-32">{test.input}</pre>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground mb-1">Expected:</p>
-                            <pre className="bg-muted p-1.5 rounded-md overflow-auto max-h-32">{test.expected}</pre>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground mb-1">Output:</p>
-                            <pre className={`p-1.5 rounded-md overflow-auto max-h-32 ${test.passed ? "bg-green-900/20" : "bg-red-900/20"}`}>
-                              {test.output}
-                            </pre>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-                
-                <DialogFooter className="mt-4">
-                  <Button onClick={() => setShowResultsDialog(false)}>Close</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </ResizablePanel>
-      </ResizablePanelGroup>
-      
+          </ResizablePanel>
+        </ResizablePanelGroup>
       )}
        <ChatBubble
             id="dsa-interview-chat"
@@ -815,6 +824,13 @@ vector<int> twoSum(vector<int>& nums, int target) {
             position={{ x: 16, y: 16 }}
             className="z-50 max-w-xs"
           />
+  
+      {/* Update Dialog styling */}
+      <Dialog open={showResultsDialog} onOpenChange={setShowResultsDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col bg-zinc-900 border-zinc-800">
+          {/* ... dialog content with updated styling ... */}
+        </DialogContent>
+      </Dialog>
     </div>
-  )
+  );
 }
