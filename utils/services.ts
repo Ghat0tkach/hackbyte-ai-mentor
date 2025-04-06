@@ -1,4 +1,8 @@
 import { cppTemplate } from "@/components/dsa-template/templates/language_templates";
+import { addTwoNumbersTemplate } from "@/components/dsa-template/templates/add_two_numbers_template";
+import { longestSubstringTemplate } from "@/components/dsa-template/templates/longest_substring_template";
+import { medianTwoArraysTemplate } from "@/components/dsa-template/templates/median_two_arrays_template";
+import { longestPalindromeTemplate } from "@/components/dsa-template/templates/longest_palindrome_template";
 
 // Updated language codes to match the ones used in page.tsx
 const languageCodeMap = {
@@ -81,7 +85,7 @@ const safeEncode = (text) => {
     }
 };
 
-export async function makeSubmission ({ code, language, stdin }) {
+export async function makeSubmission ({ code, language, stdin, questionTitle }) {
     // make a submission handle the status of the submission
     const url = 'https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=true';
     
@@ -90,8 +94,23 @@ export async function makeSubmission ({ code, language, stdin }) {
     
     // For C++, wrap the user's code with a template that includes a main function
     if (language === 52) { // C++ language ID
-        // Extract the user's solution function and insert it into the template
-        processedCode = cppTemplate.replace('// User\'s solution function will be inserted here', code);
+        // Check which problem we're dealing with based on question title or input format
+        if (questionTitle === "Add Two Numbers" || (stdin && stdin.includes('l1 = ') && stdin.includes('l2 = '))) {
+            // Add Two Numbers problem
+            processedCode = addTwoNumbersTemplate.replace('ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {\n    // This is a placeholder. The actual solution will be provided by the user\n    return nullptr;\n}', code);
+        } else if (questionTitle === "Longest Substring Without Repeating Characters" || (stdin && stdin.includes('s = ') && !stdin.includes('nums'))) {
+            // Longest Substring Without Repeating Characters problem
+            processedCode = longestSubstringTemplate.replace('int lengthOfLongestSubstring(string s) {\n    // This is a placeholder. The actual solution will be provided by the user\n    return 0;\n}', code);
+        } else if (questionTitle === "Median of Two Sorted Arrays" || (stdin && stdin.includes('nums1 = ') && stdin.includes('nums2 = '))) {
+            // Median of Two Sorted Arrays problem
+            processedCode = medianTwoArraysTemplate.replace('double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) {\n    // This is a placeholder. The actual solution will be provided by the user\n    return 0.0;\n}', code);
+        } else if (questionTitle === "Longest Palindromic Substring" || (stdin && stdin.includes('s = ') && !stdin.includes('nums'))) {
+            // Longest Palindromic Substring problem
+            processedCode = longestPalindromeTemplate.replace('string longestPalindrome(string s) {\n    // This is a placeholder. The actual solution will be provided by the user\n    return "";\n}', code);
+        } else {
+            // Use the default template for other problems
+            processedCode = cppTemplate.replace('// User\'s solution function will be inserted here', code);
+        }
     }
     
     // Ensure code is properly encoded

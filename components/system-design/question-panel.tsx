@@ -277,6 +277,7 @@ export function QuestionPanel({
         </div>
       )}
 
+
       {isPanelCollapsed && (
         <div className="flex flex-col items-center pt-4 gap-4">
           {/* Show all questions in collapsed view for quick access */}

@@ -1,10 +1,9 @@
 'use client';
 
 import * as React from 'react';
-// Import ScrollArea component correctly
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { LeetCodeQuestion } from '../utils/csv-loader';
+import { LeetCodeQuestion } from '@/utils/csv-loader';  // Fixed import path
 
 interface QuestionDisplayProps {
   question: {
@@ -25,6 +24,14 @@ interface QuestionDisplayProps {
 }
 
 export function QuestionDisplay({ question }: QuestionDisplayProps) {
+  // Move companyTags definition before the return statement
+  const companyTags = React.useMemo(() => {
+    if (!question.Companies) return [];
+    return question.Companies.split(',')
+      .map(company => company.trim())
+      .filter(company => company.length > 0);
+  }, [question.Companies]);
+
   // Debug: Log the question object to verify its structure
   console.log('QuestionDisplay received question:', question);
   
@@ -120,101 +127,102 @@ export function QuestionDisplay({ question }: QuestionDisplayProps) {
     ? question.constraints
     : [question.constraints];
 
-  // Function to get difficulty badge color
+  // Function to get difficulty badge color - updated with brighter colors
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty.toLowerCase()) {
       case 'easy':
-        return 'bg-green-500 hover:bg-green-600';
+        return 'bg-green-400 hover:bg-green-500';
       case 'medium':
-        return 'bg-yellow-500 hover:bg-yellow-600';
+        return 'bg-yellow-400 hover:bg-yellow-500';
       case 'hard':
-        return 'bg-red-500 hover:bg-red-600';
+        return 'bg-red-400 hover:bg-red-500';
       default:
-        return 'bg-gray-500 hover:bg-gray-600';
+        return 'bg-gray-400 hover:bg-gray-500';
     }
   };
-
-  // Format company tags if they exist
-  const companyTags = question.Companies ? 
-    question.Companies.split(',').map(company => company.trim()).filter(company => company.length > 0) : 
-    [];
 
   return (
     <div className="h-full">
       <ScrollArea className="h-full">
-        <div className="p-4 space-y-4">
+        <div className="p-4 space-y-6">
           {/* Question metadata section */}
-          <div className="flex flex-wrap items-center gap-2 mb-2">
-            <Badge className={`${getDifficultyColor(question.difficulty)}`}>
+          <div className="flex flex-wrap items-center gap-3">
+            <Badge className={`${getDifficultyColor(question.difficulty)} px-3 py-1`}>
               {question.difficulty}
             </Badge>
             
             {/* Acceptance rate if available */}
             {question.acceptance_rate && (
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-xs border-purple-400/30 text-purple-300 px-3 py-1">
                 Acceptance: {question.acceptance_rate}%
               </Badge>
             )}
-            
-            {/* Paid only indicator */}
-            {question.paid_only && (
-              <Badge variant="secondary" className="text-xs">
-                Premium
-              </Badge>
-            )}
           </div>
-          
-          {/* Company tags if available */}
+
+          {/* Company tags section */}
           {companyTags.length > 0 && (
-            <div className="mb-3">
-              <p className="text-xs text-muted-foreground mb-1">Companies:</p>
-              <div className="flex flex-wrap gap-1">
-                {companyTags.map((tag, index) => (
-                  <Badge key={index} variant="outline" className="text-xs">
-                    {tag}
+            <div className="flex flex-col gap-3">
+              <span className="text-sm text-purple-300">Companies:</span>
+              <div className="flex flex-wrap gap-2">
+                {companyTags.map((company, index) => (
+                  <Badge 
+                    key={index} 
+                    variant="outline" 
+                    className="text-xs border-purple-400/30 bg-purple-500/5 text-purple-300 hover:bg-purple-500/10 px-2 py-1 mr-1 mb-1"
+                  >
+                    {company}
                   </Badge>
                 ))}
               </div>
             </div>
           )}
-          
-          <h2 className="text-2xl font-bold">{question.title}</h2>
-          <div dangerouslySetInnerHTML={{ __html: question.question_body }} />
 
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Examples:</h3>
-            {formattedExamples.length > 0 ? (
-              formattedExamples.map((example, index) => (
-                <div key={index} className="bg-muted p-3 rounded-md space-y-2">
-                  <div>
-                    <strong>Input:</strong> <pre className="inline bg-muted-foreground/10 p-1 rounded" dangerouslySetInnerHTML={{ __html: example.input }} />
-                  </div>
-                  <div>
-                    <strong>Output:</strong> <pre className="inline bg-muted-foreground/10 p-1 rounded" dangerouslySetInnerHTML={{ __html: example.output }} />
-                  </div>
-                  {example.explanation && (
-                    <div>
-                      <strong>Explanation:</strong> <pre className="inline bg-muted-foreground/10 p-1 rounded" dangerouslySetInnerHTML={{ __html: example.explanation }} />
-                    </div>
-                  )}
+          <h2 className="text-2xl font-bold pt-2">{question.title}</h2>
+          <div className="py-2 max-h-[calc(100vh-24rem)] overflow-y-auto pr-2" dangerouslySetInnerHTML={{ __html: question.question_body }} />
+
+          {/* Examples section */}
+          <div className="space-y-6">
+            <h3 className="text-lg font-medium text-zinc-200">Examples:</h3>
+            {formattedExamples.map((example, index) => (
+              <div 
+                key={index} 
+                className="bg-purple-500/5 border border-purple-500/20 rounded-lg p-4 space-y-4"
+              >
+                <div>
+                  <span className="text-purple-300 text-sm">Input:</span>
+                  <pre className="mt-2 p-3 bg-zinc-900 rounded border border-purple-500/10 font-mono text-sm text-zinc-200">
+                    {example.input}
+                  </pre>
                 </div>
-              ))
-            ) : (
-              <div className="text-muted-foreground">No examples available</div>
-            )}
-            
-            {/* Rest of the component remains the same */}
+                <div>
+                  <span className="text-purple-300 text-sm">Output:</span>
+                  <pre className="mt-2 p-3 bg-zinc-900 rounded border border-purple-500/10 font-mono text-sm text-zinc-200">
+                    {example.output}
+                  </pre>
+                </div>
+                {example.explanation && (
+                  <div>
+                    <span className="text-purple-300 text-sm">Explanation:</span>
+                    <pre className="mt-2 p-3 bg-zinc-900 rounded border border-purple-500/10 font-mono text-sm text-zinc-200">
+                      {example.explanation}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Constraints section */}
           {constraintsArray.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold">Constraints:</h3>
-              <ul className="list-disc pl-5">
+            <div className="space-y-3">
+              <h3 className="text-lg font-medium text-zinc-200">Constraints:</h3>
+              <ul className="list-disc pl-5 text-zinc-300 space-y-2">
                 {constraintsArray.map((constraint, index) => (
                   <li key={index} dangerouslySetInnerHTML={{ __html: constraint }} />
                 ))}
               </ul>
             </div>
           )}
-          </div>
         </div>
       </ScrollArea>
     </div>

@@ -11,13 +11,15 @@ import { useRouter } from "next/navigation"
 import { ChatBubble } from "@/components/ui/chat-bubble"
 import { useOnboardingStore } from "@/store/onboardingStore"
 import { useSpeech } from "@/hooks/use-speech"
+import { Canvas } from "@react-three/fiber"
+import { Suspense } from "react" // Add Suspense import
+import { Scenario } from "@/components/avatar/scenario"
+import { Environment } from "@react-three/drei" // Add Environment import
+import { CameraControls } from "@react-three/drei"; // Import CameraControls
 
 export default function SystemDesignSession() {
   const [isDarkMode, setIsDarkMode] = useState<boolean>(true)
   const router = useRouter()
-  const whiteboardExportRef = useRef<(() => string) | null>(null)
-  const whiteboardImportRef = useRef<((data: string) => boolean) | null>(null)
-  const whiteboardStreamRef = useRef<((data: string, delay?: number) => boolean) | null>(null)
   
   // Add loading state for Gemini generation
   const [isGenerating, setIsGenerating] = useState(false)
@@ -27,17 +29,13 @@ export default function SystemDesignSession() {
   
   // Get system design message history from the store
   const { 
-    systemDesignMessagesHistory, 
     addMessage, 
-    setActiveChatBubble 
   } = useOnboardingStore()
   
   const { 
     experienceLevel,
     currentQuestionId, 
     setCurrentQuestionId,
-    setCurrentCode,
-    setDiagramData,
     startSession,
     endSession
   } = useSystemDesignStore()
@@ -76,18 +74,7 @@ export default function SystemDesignSession() {
   
   // Find the currently selected question
   const selectedQuestion = systemDesignQuestions.find(q => q.id === currentQuestionId) || systemDesignQuestions[0];
-  
-  // Example function to demonstrate text streaming
-  const handleStreamExample = () => {
-    if (typeof window !== 'undefined' && (window as any).streamWhiteboardText) {
-      // Stream a sample text at position 100, 100
-      (window as any).streamWhiteboardText(
-        "This is a streaming text example. Watch it appear character by character!",
-        100,
-        100
-      );
-    }
-  }
+
   const [exportFn, setExportFn] = useState<(() => string) | null>(null);
   const [importFn, setImportFn] = useState<((data: string) => boolean) | null>(null);
   const [streamFn, setStreamFn] = useState<((data: string, delay?: number) => boolean) | null>(null);
@@ -104,31 +91,6 @@ export default function SystemDesignSession() {
   const handleStream = useCallback((fn: (data: string, delay?: number) => boolean) => {
     setStreamFn(() => fn);
   }, []);
-  
-  const saveWhiteboard = () => {
-    if (exportFn) {
-      const data = exportFn();
-      localStorage.setItem('whiteboard-data', data);
-    }
-  };
-  
-  const loadWhiteboard = () => {
-    if (importFn) {
-      const data = localStorage.getItem('whiteboard-data');
-      if (data) {
-        importFn(data);
-      }
-    }
-  };
-  
-  const streamWhiteboard = () => {
-    if (streamFn) {
-      const data = localStorage.getItem('whiteboard-data');
-      if (data) {
-        streamFn(data, 300);
-      }
-    }
-  };
   
   // New function to generate and stream system design diagram
   const generateSystemDesign = async (questionText?: string) => {
@@ -167,7 +129,7 @@ export default function SystemDesignSession() {
       addMessage({
         text: "I've generated the diagram based on your request. You can see it on the whiteboard now.",
         sender: 'ai',
-        animation: 'TalkingOne',
+        animation: 'idle',
         facialExpression: 'smile',
       }, 'system-design');
       
@@ -187,100 +149,45 @@ export default function SystemDesignSession() {
     }
   };
   
-  // Handle whiteboard export/import callbacks
-  const handleWhiteboardExport = (exportFn: () => string) => {
-    whiteboardExportRef.current = exportFn;
-  }
-  
-  const handleWhiteboardImport = (importFn: (data: string) => boolean) => {
-    whiteboardImportRef.current = importFn;
-  }
-  
-  const handleWhiteboardStream = (streamFn: (data: string, delay?: number) => boolean) => {
-    whiteboardStreamRef.current = streamFn;
-  }
-  
-  // Handle sending a message from the chat bubble
-  const handleSendMessage = async (message: string, type: string) => {
-    // Add user message to the store
-    addMessage({
-      text: message,
-      sender: 'user',
-    }, 'system-design');
-    
-    try {
-      // Send message to API
-      const response = await fetch('/api/tts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message,
-          type: 'system-design',
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      // Process AI responses
-      if (data.messages && Array.isArray(data.messages)) {
-        for (const msg of data.messages) {
-          // Add the AI message to the store
-          addMessage({
-            text: msg.text,
-            sender: 'ai',
-            animation: msg.animation,
-            facialExpression: msg.facialExpression,
-            mermaid: msg.mermaid,
-            toolUse: msg.toolUse,
-            lipsync: msg.lipsync,
-          }, 'system-design');
-          
-          // Check if this message contains a diagram request
-          if (msg.toolUse && msg.toolUse.type === 'diagram') {
-            // Generate the diagram based on the tool use parameters
-            await generateSystemDesign(msg.toolUse.parameters.prompt);
-          }
+  // Monitor messageHistory for diagram tools
+  useEffect(() => {
+    const handleDiagramGeneration = async () => {
+      if (messageHistory && messageHistory.length > 0) {
+        const latestMessage = messageHistory[messageHistory.length - 1];
+        console.log("Latest Message:", latestMessage);
+        if (latestMessage.tools && 
+            latestMessage.tools[0] && 
+            latestMessage.tools[0].type === 'diagram') {
+          // Generate diagram with the current selected question
+          await generateSystemDesign(selectedQuestion?.question);
         }
       }
-    } catch (error) {
-      console.error('Error sending message:', error);
-      
-      // Add error message
-      addMessage({
-        text: "Sorry, I couldn't process your request. Please try again.",
-        sender: 'ai',
-        animation: 'SadIdle',
-        facialExpression: 'sad',
-      }, 'system-design');
+    };
+
+    handleDiagramGeneration();
+  }, [messageHistory, selectedQuestion]);
+
+  // Add state to track Canvas errors
+  const [canvasError, setCanvasError] = useState(false);
+  
+  // Adjusted camera coords for the avatar scene to focus on head/shoulders in circle
+  const avatarCameraCoords = {
+    CameraPosition: {
+      x: 0,
+      y: 1.8,  // Slightly higher to focus on head/shoulders
+      z: 0.5   // Closer zoom
+    },
+    CameraTarget: {
+      x: 0,
+      y: 1.8,  // Focus on face
+      z: 0
     }
   };
   
-  // Monitor message history for diagram requests
-  useEffect(() => {
-    const checkForDiagramRequests = async () => {
-      if (systemDesignMessagesHistory.length === 0) return;
-      
-      // Get the most recent AI message
-      const recentMessages = [...systemDesignMessagesHistory].reverse();
-      const latestAiMessage = recentMessages.find(msg => msg.sender === 'ai');
-      
-      if (latestAiMessage && latestAiMessage.toolUse && 
-          latestAiMessage.toolUse.type === 'diagram' && 
-          !isGenerating) {
-        // Generate diagram based on the tool use parameters
-        await generateSystemDesign(latestAiMessage.toolUse.parameters.prompt);
-      }
-    };
-    
-    checkForDiagramRequests();
-  }, [systemDesignMessagesHistory, isGenerating]);
-  
+  const cameraControlsRef = useRef(); // Create a ref for CameraControls
+
+
+
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
       <div className="flex flex-col h-screen bg-background text-foreground">
@@ -289,7 +196,7 @@ export default function SystemDesignSession() {
           toggleDarkMode={() => setIsDarkMode(!isDarkMode)} 
         />
         
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 overflow-hidden relative">
           <QuestionPanel
             questions={systemDesignQuestions}
             selectedQuestionId={currentQuestionId}
@@ -297,7 +204,7 @@ export default function SystemDesignSession() {
             selectedQuestion={selectedQuestion}
           />
           
-          <div className="flex-1 p-4 overflow-hidden">
+          <div className="flex-1 p-4 overflow-hidden relative">
             <div className="h-full">
               <Whiteboard 
                 width="100%" 
@@ -305,55 +212,72 @@ export default function SystemDesignSession() {
                 onExport={handleExport} 
                 onImport={handleImport}
                 onStream={handleStream}
+                selectedQuestion={selectedQuestion}
               />
               
-              {/* Updated button panel with Generate option */}
-              <div className="p-4 bg-white border-t sticky bottom-0 left-0 border-gray-200 flex justify-center space-x-4">
-                <button 
-                  onClick={saveWhiteboard}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  Save
-                </button>
-                <button 
-                  onClick={loadWhiteboard}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-                >
-                  Load
-                </button>
-                <button 
-                  onClick={streamWhiteboard}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
-                >
-                  Stream
-                </button>
-                <button 
-                  onClick={() => generateSystemDesign()}
-                  disabled={isGenerating}
-                  className={`px-4 py-2 rounded-md ${
-                    isGenerating 
-                      ? "bg-gray-400 cursor-not-allowed" 
-                      : "bg-indigo-600 hover:bg-indigo-700 text-white"
-                  }`}
-                >
-                  {isGenerating ? "Generating..." : "Generate Diagram"}
-                </button>
-              </div>
+              {/* Loading overlay */}
+              {isGenerating && (
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-white font-medium">Generating diagram...</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
+          
+          {/* Circular avatar container positioned at bottom left */}
+          <div className="absolute bottom-8 left-8 w-50 h-50 rounded-full overflow-hidden border-2 border-blue-500 shadow-lg">
+            <div className="w-full h-full bg-gradient-to-b from-gray-800 to-gray-900">
+              {!canvasError ? (
+                <Canvas
+                  shadows
+                  camera={{ position: [0, 2.0, 0.5], fov: 25 }} // Adjusted y position for a higher view
+                  style={{ width: '100%', height: '100%' }}
+                  gl={{ 
+                    alpha: true,
+                    antialias: true,
+                    powerPreference: "high-performance",
+                    failIfMajorPerformanceCaveat: false
+                  }}
+                  onCreated={({ gl }) => {
+                    if (!gl.getContext()) {
+                      console.error("WebGL context not available");
+                      setCanvasError(true);
+                    }
+                  }}
+                  onError={() => setCanvasError(true)}
+                >
+                  <Suspense fallback={null}>
+                    <CameraControls ref={cameraControlsRef} />
+                    <Scenario 
+                      environment={false}
+                      scale={1.8}
+                      cameraCoords={avatarCameraCoords}
+                      hidden={false}
+                    />
+                    <Environment preset="city" />
+                  </Suspense>
+                </Canvas>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-white text-xs text-center p-2">
+                  Unable to load 3D avatar
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Chat bubble positioned above the avatar */}
+          <ChatBubble
+            id="system-design-chat"
+            type="system-design"
+            title="System Design Assistant"
+            position={{ x: 16, y: 16 }}
+          className="z-50 max-w-xs"
+          />
         </div>
-        
-        {/* Add the chat bubble */}
-        <ChatBubble
-          id="system-design-chat"
-          type="system-design"
-          title="System Design Assistant"
-          position={{ x: 20, y: 20 }}
-          onSendMessage={handleSendMessage}
-          className="z-50"
-        />
       </div>
     </ThemeProvider>
   );
 }
-
