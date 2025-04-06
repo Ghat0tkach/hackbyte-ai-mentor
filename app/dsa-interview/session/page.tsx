@@ -496,7 +496,7 @@ vector<int> twoSum(vector<int>& nums, int target) {
   return (
     <div className="flex flex-col h-screen bg-background dark text-gray-200">
       <header className="border-b border-border h-14 flex items-center px-4">
-        <h1 className="text-xl font-bold text-foreground">InterviewX</h1>
+        <h1 className="text-xl font-bold text-foreground">IntervueX</h1>
         <div className="ml-auto flex items-center gap-2">
           {selectedCompany && selectedDifficulty && (
             <div className="flex items-center gap-2 mr-4">

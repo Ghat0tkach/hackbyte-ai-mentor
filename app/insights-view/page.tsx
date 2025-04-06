@@ -38,9 +38,9 @@ import { CalendarIcon, CheckCircle2, XCircle, AlertCircle, User, Award, Trending
 
 // Mock data - replace with actual API call
 const mockCandidateData = {
-  name: "John Doe",
+  name: "Shashank Bhargava",
   position: "Frontend Developer",
-  date: "2023-11-15",
+  date: "2024-11-7",
   overallScore: 85,
   skills: [
     { name: "Technical Knowledge", score: 90 },
