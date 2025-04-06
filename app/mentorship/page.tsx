@@ -19,7 +19,7 @@ export default function Home() {
               <div className="relative w-7 h-7 md:w-8 md:h-8 overflow-hidden rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center">
                 <Zap className="h-3.5 w-3.5 md:h-4 md:w-4 text-white" />
               </div>
-              <span className="inline-block font-bold text-lg md:text-xl tracking-tight">MentorAI</span>
+              <span className="inline-block font-bold text-lg md:text-xl tracking-tight">MentorX</span>
             </Link>
           </div>
           <div className="flex items-center space-x-1 sm:space-x-2">

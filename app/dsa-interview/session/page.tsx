@@ -585,6 +585,7 @@ vector<int> twoSum(vector<int>& nums, int target) {
     router.push('/dsa-interview/onboarding');
   };
 
+
   // Timer component with reset functionality
   const TimerWithReset = () => {
     const [elapsedTime, setElapsedTime] = useState(0);
@@ -628,6 +629,7 @@ vector<int> twoSum(vector<int>& nums, int target) {
       return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     };
     
+    
     return (
       <div className="flex items-center gap-2 bg-background/80 border border-border rounded-md px-2 py-1 shadow-sm">
         <Clock className="h-4 w-4 text-muted-foreground" />
@@ -662,6 +664,7 @@ vector<int> twoSum(vector<int>& nums, int target) {
           </Button>
         </div>
       </div>
+      
     );
   };
 
@@ -671,7 +674,7 @@ vector<int> twoSum(vector<int>& nums, int target) {
       {/* Enhanced header with gradient border and glass effect */}
       <header className="border-b border-zinc-800/50 bg-zinc-900/50 backdrop-blur-sm h-14 flex items-center px-6 sticky top-0 z-50">
         <h1 className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text">
-          InterviewX
+         IntervueX
         </h1>
         {/* ... rest of header content ... */}
       </header>
