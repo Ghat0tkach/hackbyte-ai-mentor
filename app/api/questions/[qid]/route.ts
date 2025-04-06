@@ -2,19 +2,30 @@ import clientPromise from '@/lib/database/mongodb';
 import { NextResponse } from 'next/server';
 
 export async function GET(
-  request: Request,
-  { params }: { params: { qid: string } }
-) {
+  request: Request
+): Promise<NextResponse> {
   try {
-    console.log('API: Fetching question...');
-    console.log('params:', params);
     const client = await clientPromise;
     const db = client.db('rag-knowledge-base');
     
-    // Extract qid from URL
-    const resolvedParams = await params;
-    const qid = resolvedParams.qid;
-    const questionId = parseInt(qid);
+    // Parse URL and get query parameters
+    const url = new URL(request.url);
+    const company = url.searchParams.get('company');
+    const difficulty = url.searchParams.get('difficulty');
+
+    // If company and difficulty are provided, use them for filtering
+    if (company && difficulty) {
+      const questions = await db.collection('leetcode_questions')
+        .find({ 
+          company: company,
+          difficulty: difficulty 
+        })
+        .toArray();
+      return NextResponse.json(questions);
+    }
+
+    // Otherwise, proceed with qid-based lookup
+    const questionId = parseInt(params.qid);
 
     console.log(`API: Attempting to fetch question with ID ${questionId}`);
 

@@ -198,10 +198,15 @@ export default function LeetCodeUI() {
   };
   
   // Function to fetch a question by qid from the API
+  // Update the fetch call to include query parameters
   const fetchQuestionByQid = async (qid: number): Promise<LeetCodeQuestion | null> => {
-    try {
-      console.log(`Fetching question with qid: ${qid}`);
-      const response = await fetch(`/api/questions/${qid}`);
+  try {
+    console.log(`Fetching question with qid: ${qid}`);
+    const url = new URL(`/api/questions/${qid}`, window.location.origin);
+    url.searchParams.set('company', selectedCompany || '');
+    url.searchParams.set('difficulty', selectedDifficulty || '');
+    
+    const response = await fetch(url);
       
       if (!response.ok) {
         if (response.status === 404) {
