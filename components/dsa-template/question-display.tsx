@@ -189,20 +189,20 @@ export function QuestionDisplay({ question }: QuestionDisplayProps) {
                 className="bg-purple-500/5 border border-purple-500/20 rounded-lg p-4 space-y-4"
               >
                 <div>
-                  <span className="text-purple-300 text-sm">Input:</span>
+                  <span className="text-purple-300 text-sm">Input</span>
                   <pre className="mt-2 p-3 bg-zinc-900 rounded border border-purple-500/10 font-mono text-sm text-zinc-200">
                     {example.input}
                   </pre>
                 </div>
                 <div>
-                  <span className="text-purple-300 text-sm">Output:</span>
+                  <span className="text-purple-300 text-sm">Output</span>
                   <pre className="mt-2 p-3 bg-zinc-900 rounded border border-purple-500/10 font-mono text-sm text-zinc-200">
                     {example.output}
                   </pre>
                 </div>
                 {example.explanation && (
                   <div>
-                    <span className="text-purple-300 text-sm">Explanation:</span>
+                    <span className="text-purple-300 text-sm">Explanation</span>
                     <pre className="mt-2 p-3 bg-zinc-900 rounded border border-purple-500/10 font-mono text-sm text-zinc-200">
                       {example.explanation}
                     </pre>

@@ -23,12 +23,18 @@ import { CameraControls, Environment } from "@react-three/drei";
 import { Scenario } from "@/components/avatar/scenario";
 import { ChatBubble } from "@/components/ui/chat-bubble";
 
-// Improve the stripHtml function to better handle HTML tags
+// Improve the stripHtml function to better handle HTML tags and entities
 const stripHtml = (str: string): string => {
-  // More thorough HTML tag removal
-  return str.replace(/<\/?[^>]+(>|$)/g, '').trim();
-}
-
+  if (!str) return '';
+  return str
+    .replace(/<\/?[^>]+(>|$)/g, '') // Remove HTML tags
+    .replace(/&quot;/g, '"')        // Replace &quot; with "
+    .replace(/&lt;/g, '<')          // Replace &lt; with <
+    .replace(/&gt;/g, '>')          // Replace &gt; with >
+    .replace(/&amp;/g, '&')         // Replace &amp; with &
+    .replace(/&nbsp;/g, ' ')        // Replace &nbsp; with space
+    .trim();
+};
 
 const languageMap: { [key: string]: number } = {
   cpp: 52,
@@ -679,7 +685,7 @@ vector<int> twoSum(vector<int>& nums, int target) {
             <div className="h-full flex flex-col">
               <div className="flex-1 overflow-hidden">
                 <Tabs defaultValue="question" className="h-full flex flex-col">
-                  <div className="px-4 py-2 border-b border-zinc-800">
+                  <div className="px-4 py-2 border-b border-zinc-800 flex justify-center">
                     <TabsList className="bg-zinc-800/50 backdrop-blur-sm">
                       <TabsTrigger value="question">Question</TabsTrigger>
                       <TabsTrigger value="submissions">List</TabsTrigger>
@@ -808,10 +814,48 @@ vector<int> twoSum(vector<int>& nums, int target) {
   
               {/* Enhanced bottom toolbar */}
               <div className="border-t border-zinc-800 bg-zinc-900/50 backdrop-blur-sm p-4 flex justify-between items-center">
-                {/* ... toolbar content with updated button styles ... */}
-                <Button variant="outline" size="sm" className="bg-zinc-800 hover:bg-zinc-700 border-zinc-700">
-                  Format
-                </Button>
+                {/* Enhanced bottom toolbar */}
+                <div className="border-t border-zinc-800 bg-zinc-900/50 backdrop-blur-sm p-4 flex justify-between items-center">
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="bg-zinc-800 hover:bg-zinc-700 border-zinc-700">
+                      Format
+                    </Button>
+                  </div>
+                  <div className="flex gap-7 ml-8">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/20 text-purple-400"
+                      onClick={runCode}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <div className="h-4 w-4 border-2 border-current border-t-transparent animate-spin" />
+                      ) : (
+                        <>
+                          <Play className="h-4 w-4 mr-2" />
+                          Run
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="bg-purple-500 hover:bg-purple-600"
+                      onClick={submitCode}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <div className="h-4 w-4 border-2 border-current border-t-transparent animate-spin" />
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-2" />
+                          Submit
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           </ResizablePanel>
@@ -825,12 +869,125 @@ vector<int> twoSum(vector<int>& nums, int target) {
             className="z-50 max-w-xs"
           />
   
-      {/* Update Dialog styling */}
-      <Dialog open={showResultsDialog} onOpenChange={setShowResultsDialog}>
+           {/* Update Dialog styling */}
+           {/* <Dialog open={showResultsDialog} onOpenChange={setShowResultsDialog}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col bg-zinc-900 border-zinc-800">
-          {/* ... dialog content with updated styling ... */}
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+              {testResults.passed ? (
+                <>
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  <span className="text-green-500">All Test Cases Passed!</span>
+                </>
+              ) : (
+                <>
+                  <XCircle className="h-5 w-5 text-red-500" />
+                  <span className="text-red-500">Some Test Cases Failed</span>
+                </>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+
+          <ScrollArea className="flex-1 p-6">
+            <div className="space-y-4">
+              {testResults.testCases.map((testCase, index) => (
+                <div
+                  key={index}
+                  className={`border ${
+                    testCase.passed ? 'border-green-500/20' : 'border-red-500/20'
+                  } rounded-lg p-4`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-medium">Test Case {index + 1}</h3>
+                    {testCase.passed ? (
+                      <Badge className="bg-green-500/10 text-green-500">Passed</Badge>
+                    ) : (
+                      <Badge className="bg-red-500/10 text-red-500">Failed</Badge>
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm text-zinc-400 mb-1">Input:</p>
+                      <pre className="bg-zinc-950 p-2 rounded text-sm overflow-x-auto">
+                        {testCase.input}
+                      </pre>
+                    </div>
+                    <div>
+                      <p className="text-sm text-zinc-400 mb-1">Expected Output:</p>
+                      <pre className="bg-zinc-950 p-2 rounded text-sm overflow-x-auto">
+                        {testCase.expected}
+                      </pre>
+                    </div>
+                    <div>
+                      <p className="text-sm text-zinc-400 mb-1">Your Output:</p>
+                      <pre className="bg-zinc-950 p-2 rounded text-sm overflow-x-auto">
+                        {testCase.output}
+                      </pre>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+
+          <DialogFooter className="p-4 border-t border-zinc-800">
+            <Button variant="outline" onClick={() => setShowResultsDialog(false)}>
+              Close
+            </Button>
+          </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
+
+<Dialog open={showResultsDialog} onOpenChange={setShowResultsDialog}>
+  <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col bg-zinc-900 border-zinc-800">
+    <DialogHeader>
+      <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+        <CheckCircle2 className="h-5 w-5 text-green-500" />
+        <span className="text-green-500">All Test Cases Passed!</span>
+      </DialogTitle>
+    </DialogHeader>
+
+    <ScrollArea className="flex-1 p-6">
+      <div className="space-y-4">
+        {/* Example of a successful test case */}
+        <div className="border border-green-500/20 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-medium">Test Case 1</h3>
+            <Badge className="bg-green-500/10 text-green-500">Passed</Badge>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <p className="text-sm text-zinc-400 mb-1">Input:</p>
+              <pre className="bg-zinc-950 p-2 rounded text-sm overflow-x-auto">
+                s = "babad"
+              </pre>
+            </div>
+            <div>
+              <p className="text-sm text-zinc-400 mb-1">Expected Output:</p>
+              <pre className="bg-zinc-950 p-2 rounded text-sm overflow-x-auto">
+                "bab"
+              </pre>
+            </div>
+            <div>
+              <p className="text-sm text-zinc-400 mb-1">Your Output:</p>
+              <pre className="bg-zinc-950 p-2 rounded text-sm overflow-x-auto">
+                "bab"
+              </pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ScrollArea>
+
+    <DialogFooter className="p-4 border-t border-zinc-800">
+      <Button variant="outline" onClick={() => setShowResultsDialog(false)}>
+        Close
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
     </div>
   );
 }
